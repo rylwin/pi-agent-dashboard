@@ -7,9 +7,9 @@
  * See change: add-dashboard-model-proxy, design §1.
  */
 import { existsSync, readFileSync } from "node:fs";
-import { homedir } from "node:os";
 import { join } from "node:path";
 import { pathToFileURL } from "node:url";
+import { getPiAgentDir } from "@blackbelt-technology/pi-dashboard-shared/managed-paths.js";
 import { getDefaultRegistry, ModuleResolutionError } from "@blackbelt-technology/pi-dashboard-shared/tool-registry/index.js";
 import { InternalRegistry, type PiAiModule, type CustomProviderEntry, type CustomModelEntry } from "./internal-registry.js";
 import { InternalAuthStorage, type PiAiOAuthModule } from "./internal-auth-storage.js";
@@ -21,8 +21,8 @@ let lastError: string | null = null;
 
 // ── Disk readers ──────────────────────────────────────────────────────────────
 
-const PROVIDERS_PATH = join(homedir(), ".pi", "agent", "providers.json");
-const MODELS_PATH = join(homedir(), ".pi", "agent", "models.json");
+const PROVIDERS_PATH = join(getPiAgentDir(), "providers.json");
+const MODELS_PATH = join(getPiAgentDir(), "models.json");
 
 function readProviders(): Record<string, CustomProviderEntry> {
   if (!existsSync(PROVIDERS_PATH)) return {};

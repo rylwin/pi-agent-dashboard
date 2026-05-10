@@ -5,6 +5,7 @@ import type { FastifyInstance } from "fastify";
 import type { SessionManager } from "../memory-session-manager.js";
 import type { PreferencesStore } from "../preferences-store.js";
 import type { DirectoryService } from "../directory-service.js";
+import { getPiAgentDir } from "@blackbelt-technology/pi-dashboard-shared/managed-paths.js";
 import type { ApiResponse } from "@blackbelt-technology/pi-dashboard-shared/types.js";
 import type { NetworkGuard } from "./route-deps.js";
 import { scanOpenSpecArchive } from "../openspec-archive.js";
@@ -103,8 +104,7 @@ export function registerOpenSpecRoutes(
         return { success: false, error: "path parameter required" } satisfies ApiResponse;
       }
 
-      const homeDir = process.env.HOME || process.env.USERPROFILE || "";
-      const globalPiDir = path.join(homeDir, ".pi", "agent");
+      const globalPiDir = getPiAgentDir();
       const allSessions = sessionManager.listAll();
       const knownCwds = new Set(allSessions.map((s) => s.cwd));
       for (const dir of preferencesStore.getPinnedDirectories()) knownCwds.add(dir);

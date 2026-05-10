@@ -6,16 +6,25 @@
  * by reading template/skill files directly and expanding them.
  */
 import { readFileSync, existsSync } from "node:fs";
-import { dirname, join } from "node:path";
+import { homedir } from "node:os";
+import { dirname, join, resolve } from "node:path";
 import { readdirSync, statSync } from "node:fs";
+import { getPiAgentDir, getPiSettingsPath } from "@blackbelt-technology/pi-dashboard-shared/managed-paths.js";
 import { buildSkillBlock } from "@blackbelt-technology/pi-dashboard-shared/skill-block-parser.js";
 
 /** Scan directories for .md prompt template files */
 function findPromptTemplates(cwd: string): Map<string, string> {
   const templates = new Map<string, string>();
+  const homeDir = homedir();
+  const agentDir = getPiAgentDir();
   const dirs = [
     join(cwd, ".pi", "prompts"),
     join(cwd, ".pi", "skills"),
+    join(agentDir, "prompts"),
+    join(agentDir, "skills"),
+    join(homeDir, ".claude", "commands"),
+    join(homeDir, ".claude", "prompts"),
+    ...configuredPromptDirs(homeDir),
   ];
 
   for (const dir of dirs) {
@@ -25,6 +34,34 @@ function findPromptTemplates(cwd: string): Map<string, string> {
     } catch { /* ignore */ }
   }
   return templates;
+}
+
+function configuredPromptDirs(homeDir: string): string[] {
+  const settingsFile = getPiSettingsPath();
+  if (!existsSync(settingsFile)) return [];
+
+  try {
+    const settings = JSON.parse(readFileSync(settingsFile, "utf-8"));
+    if (!Array.isArray(settings.prompts)) return [];
+
+    return settings.prompts
+      .filter((entry: unknown): entry is string => typeof entry === "string")
+      .map((entry: string) => resolvePath(entry, homeDir));
+  } catch {
+    return [];
+  }
+}
+
+function resolvePath(inputPath: string, homeDir: string): string {
+  if (inputPath === "~") return homeDir;
+  if (inputPath.startsWith("~/")) return join(homeDir, inputPath.slice(2));
+  return resolve(inputPath);
+}
+
+function commandFilePath(command: any): string | undefined {
+  if (typeof command?.path === "string") return command.path;
+  if (typeof command?.sourceInfo?.path === "string") return command.sourceInfo.path;
+  return undefined;
 }
 
 function scanDir(dir: string, templates: Map<string, string>): void {
@@ -101,15 +138,16 @@ function resolveTemplate(
     if (localSkill) {
       return { filePath: localSkill, source: "skill", resolvedName: cand };
     }
-    // Step 3: pi.getCommands() registry skill.
+    // Step 3: pi.getCommands() registry prompt/skill.
     if (pi?.getCommands) {
       try {
         const commands = pi.getCommands();
-        const skill = commands.find(
-          (c: any) => c.name === cand && c.source === "skill" && c.path,
+        const command = commands.find(
+          (c: any) => c.name === cand && (c.source === "prompt" || c.source === "skill"),
         );
-        if (skill?.path && existsSync(skill.path)) {
-          return { filePath: skill.path, source: "skill", resolvedName: cand };
+        const filePath = commandFilePath(command);
+        if (filePath && existsSync(filePath)) {
+          return { filePath, source: command.source, resolvedName: cand };
         }
       } catch { /* ignore */ }
     }

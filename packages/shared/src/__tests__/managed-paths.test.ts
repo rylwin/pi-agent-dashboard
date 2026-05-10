@@ -9,15 +9,28 @@
  */
 import os from "node:os";
 import path from "node:path";
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it } from "vitest";
 import {
   MANAGED_BIN,
   MANAGED_DIR,
   PI_SETTINGS_PATH,
   getManagedBin,
   getManagedDir,
+  getPiAgentDir,
+  getPiSessionsDir,
   getPiSettingsPath,
 } from "../managed-paths.js";
+
+const originalPiCodingAgentDir = process.env.PI_CODING_AGENT_DIR;
+const originalPiCodingAgentSessionDir = process.env.PI_CODING_AGENT_SESSION_DIR;
+
+afterEach(() => {
+  if (originalPiCodingAgentDir === undefined) delete process.env.PI_CODING_AGENT_DIR;
+  else process.env.PI_CODING_AGENT_DIR = originalPiCodingAgentDir;
+
+  if (originalPiCodingAgentSessionDir === undefined) delete process.env.PI_CODING_AGENT_SESSION_DIR;
+  else process.env.PI_CODING_AGENT_SESSION_DIR = originalPiCodingAgentSessionDir;
+});
 
 describe("managed-paths getters", () => {
   it("getManagedDir() with no arg matches live MANAGED_DIR", () => {
@@ -48,6 +61,37 @@ describe("managed-paths getters", () => {
   it("getPiSettingsPath({ homedir }) uses the override", () => {
     expect(getPiSettingsPath({ homedir: "/fake/home" })).toBe(
       path.join("/fake/home", ".pi", "agent", "settings.json"),
+    );
+  });
+
+  it("getPiAgentDir() uses PI_CODING_AGENT_DIR like pi itself", () => {
+    process.env.PI_CODING_AGENT_DIR = "/tmp/live-pi-agent";
+
+    expect(getPiAgentDir()).toBe(path.join("/tmp", "live-pi-agent"));
+    expect(getPiSettingsPath()).toBe(path.join("/tmp", "live-pi-agent", "settings.json"));
+  });
+
+  it("getPiSessionsDir() uses PI_CODING_AGENT_SESSION_DIR like pi itself", () => {
+    process.env.PI_CODING_AGENT_SESSION_DIR = "/tmp/live-pi-sessions";
+
+    expect(getPiSessionsDir()).toBe(path.join("/tmp", "live-pi-sessions"));
+  });
+
+  it("getPiAgentDir({ piCodingAgentDir }) uses explicit config override", () => {
+    expect(getPiAgentDir({ homedir: "/fake/home", piCodingAgentDir: "/tmp/pi-agent" })).toBe(
+      path.join("/tmp", "pi-agent"),
+    );
+    expect(getPiSettingsPath({ homedir: "/fake/home", piCodingAgentDir: "~/pi-agent" })).toBe(
+      path.join("/fake/home", "pi-agent", "settings.json"),
+    );
+  });
+
+  it("getPiSessionsDir({ piCodingAgentSessionDir }) uses pi's session env override", () => {
+    expect(getPiSessionsDir({ homedir: "/fake/home", piCodingAgentSessionDir: "/tmp/pi-sessions" })).toBe(
+      path.join("/tmp", "pi-sessions"),
+    );
+    expect(getPiSessionsDir({ homedir: "/fake/home", piCodingAgentDir: "/tmp/pi-agent" })).toBe(
+      path.join("/tmp", "pi-agent", "sessions"),
     );
   });
 

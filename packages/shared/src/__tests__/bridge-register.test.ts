@@ -13,16 +13,21 @@ describe("shared bridge-register", () => {
   let tmpDir: string;
   let settingsPath: string;
   let origHome: string | undefined;
+  let origPiCodingAgentDir: string | undefined;
 
   beforeEach(() => {
     tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "shared-bridge-test-"));
     settingsPath = path.join(tmpDir, ".pi", "agent", "settings.json");
     origHome = process.env.HOME;
+    origPiCodingAgentDir = process.env.PI_CODING_AGENT_DIR;
     process.env.HOME = tmpDir;
+    delete process.env.PI_CODING_AGENT_DIR;
   });
 
   afterEach(() => {
     process.env.HOME = origHome;
+    if (origPiCodingAgentDir === undefined) delete process.env.PI_CODING_AGENT_DIR;
+    else process.env.PI_CODING_AGENT_DIR = origPiCodingAgentDir;
     fs.rmSync(tmpDir, { recursive: true, force: true });
   });
 
@@ -90,6 +95,18 @@ describe("shared bridge-register", () => {
 
   describe("registerBridgeExtension", () => {
     it("registers extension path in empty settings", () => {
+      const extPath = "/app/packages/extension";
+      registerBridgeExtension(extPath);
+
+      const settings = readSettings();
+      expect(settings.packages).toContain(extPath);
+    });
+
+    it("honors PI_CODING_AGENT_DIR for bridge registration", () => {
+      const customAgentDir = path.join(tmpDir, "custom-agent");
+      process.env.PI_CODING_AGENT_DIR = customAgentDir;
+      settingsPath = path.join(customAgentDir, "settings.json");
+
       const extPath = "/app/packages/extension";
       registerBridgeExtension(extPath);
 

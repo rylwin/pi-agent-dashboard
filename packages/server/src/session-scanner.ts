@@ -5,14 +5,14 @@
  */
 import { existsSync, readFileSync, readdirSync, statSync } from "node:fs";
 import { join } from "node:path";
-import os from "node:os";
 import type { DashboardSession, SessionSource } from "@blackbelt-technology/pi-dashboard-shared/types.js";
+import { getPiSessionsDir } from "@blackbelt-technology/pi-dashboard-shared/managed-paths.js";
 import { type SessionMeta, metaPath, readSessionMeta, writeSessionMeta } from "@blackbelt-technology/pi-dashboard-shared/session-meta.js";
 import { condenseForFirstMessage } from "@blackbelt-technology/pi-dashboard-shared/skill-block-parser.js";
 import { extractSessionStats } from "./session-stats-reader.js";
 
 function getSessionsDir(): string {
-  return join(os.homedir(), ".pi", "agent", "sessions");
+  return getPiSessionsDir();
 }
 
 /** Extract session ID (UUID) from a filename like `<ts>_<uuid>.jsonl` */

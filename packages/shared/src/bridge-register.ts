@@ -10,6 +10,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import os from "node:os";
+import { getPiSettingsPath } from "./managed-paths.js";
 import { createRequire } from "node:module";
 
 /**
@@ -116,7 +117,9 @@ export function registerBridgeExtension(
     ?? process.env.HOME
     ?? process.env.USERPROFILE
     ?? os.homedir();
-  const settingsPath = path.join(home, ".pi", "agent", "settings.json");
+  const settingsPath = opts.homedir
+    ? getPiSettingsPath({ homedir: home })
+    : getPiSettingsPath();
   const settingsDir = path.dirname(settingsPath);
   fs.mkdirSync(settingsDir, { recursive: true });
 

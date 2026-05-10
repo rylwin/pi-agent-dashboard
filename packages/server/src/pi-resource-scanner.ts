@@ -4,8 +4,8 @@
  */
 import * as fs from "node:fs";
 import * as path from "node:path";
-import * as os from "node:os";
 import * as npm from "@blackbelt-technology/pi-dashboard-shared/platform/npm.js";
+import { getPiAgentDir } from "@blackbelt-technology/pi-dashboard-shared/managed-paths.js";
 import type { PiResource, PiResourceScope, PiPackageInfo, PiResourcesResult } from "@blackbelt-technology/pi-dashboard-shared/rest-api.js";
 
 // ── Frontmatter Parsing ─────────────────────────────────────────────
@@ -217,7 +217,7 @@ function resolvePackagePath(entry: string, settingsDir: string, scope: "local" |
 
     const baseDir = scope === "local" && cwd
       ? path.join(cwd, ".pi", "git")
-      : path.join(os.homedir(), ".pi", "agent", "git");
+      : path.join(getPiAgentDir(), "git");
     return { resolved: path.join(baseDir, url), source: entry };
   }
 
@@ -338,7 +338,7 @@ export interface ScanOptions {
 }
 
 export async function scanPiResources(cwd: string, options?: ScanOptions): Promise<PiResourcesResult> {
-  const globalDir = options?.globalDir ?? path.join(os.homedir(), ".pi", "agent");
+  const globalDir = options?.globalDir ?? getPiAgentDir();
 
   const local = scanLocalResources(cwd);
   const global = scanGlobalResources(globalDir);

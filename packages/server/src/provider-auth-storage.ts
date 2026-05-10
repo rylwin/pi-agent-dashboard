@@ -9,10 +9,10 @@
  */
 import fs from "node:fs";
 import path from "node:path";
-import os from "node:os";
 import { createRequire } from "node:module";
 const _require = createRequire(import.meta.url);
 const _lockfile = _require("proper-lockfile") as typeof import("proper-lockfile");
+import { getPiAgentDir } from "@blackbelt-technology/pi-dashboard-shared/managed-paths.js";
 import type { ProviderAuthStatus } from "@blackbelt-technology/pi-dashboard-shared/rest-api.js";
 import type { ProviderInfo } from "@blackbelt-technology/pi-dashboard-shared/types.js";
 import { getAllHandlers, type ProviderHandler } from "./provider-auth-handlers.js";
@@ -20,7 +20,7 @@ import { getLatestCatalogue } from "./provider-catalogue-cache.js";
 
 // ── Constants ────────────────────────────────────────────────────────────────
 
-const AUTH_DIR = path.join(os.homedir(), ".pi", "agent");
+const AUTH_DIR = getPiAgentDir();
 const AUTH_PATH = path.join(AUTH_DIR, "auth.json");
 
 export type ApiKeyCredential = { type: "api_key"; key: string };

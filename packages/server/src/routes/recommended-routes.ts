@@ -16,7 +16,7 @@
 import type { FastifyInstance } from "fastify";
 import fs from "node:fs";
 import path from "node:path";
-import os from "node:os";
+import { getPiSettingsPath } from "@blackbelt-technology/pi-dashboard-shared/managed-paths.js";
 import type { ApiResponse } from "@blackbelt-technology/pi-dashboard-shared/types.js";
 import type { EnrichedRecommendedExtension } from "@blackbelt-technology/pi-dashboard-shared/rest-api.js";
 import {
@@ -94,7 +94,7 @@ function readLocalSources(cwd: string): string[] {
 function readActiveSources(cwd?: string): string[] {
 	const sources: string[] = [];
 
-	const globalPath = path.join(os.homedir(), ".pi", "agent", "settings.json");
+	const globalPath = getPiSettingsPath();
 	try {
 		if (fs.existsSync(globalPath)) {
 			const raw = fs.readFileSync(globalPath, "utf-8").trim();

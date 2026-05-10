@@ -7,7 +7,6 @@
  * (`resolveModule("pi-coding-agent")`). All strategy chains, caching,
  * and diagnostic trails live there — see change: consolidate-tool-resolution.
  */
-import * as os from "node:os";
 import * as path from "node:path";
 import * as crypto from "node:crypto";
 import { computeIdentity, parseSourceKind } from "./package-source-helpers.js";
@@ -21,6 +20,7 @@ import {
   getDefaultSubprocessAdapter,
   type SubprocessAdapter,
 } from "@blackbelt-technology/pi-dashboard-shared/platform/subprocess-adapter.js";
+import { getPiAgentDir } from "@blackbelt-technology/pi-dashboard-shared/managed-paths.js";
 
 /**
  * Resolve a command name through the tool registry's executor API.
@@ -202,7 +202,7 @@ export interface OperationResult {
 export type ProgressListener = (operationId: string, event: ProgressEvent, moveId?: string) => void;
 export type CompleteListener = (result: OperationResult) => void;
 
-const AGENT_DIR = path.join(os.homedir(), ".pi", "agent");
+const AGENT_DIR = getPiAgentDir();
 
 export class PackageManagerWrapper {
   private busy = false;
@@ -491,10 +491,10 @@ export class PackageManagerWrapper {
       // Identity preflight against destination's packages[].
       const destPackages = readPackages(settingsManager, req.toScope);
       const toSettingsDir = req.toScope === "global"
-        ? path.join(os.homedir(), ".pi", "agent")
+        ? AGENT_DIR
         : path.join(req.toCwd ?? pmCwd, ".pi");
       const fromSettingsDir = req.fromScope === "global"
-        ? path.join(os.homedir(), ".pi", "agent")
+        ? AGENT_DIR
         : path.join(req.fromCwd ?? pmCwd, ".pi");
       const incomingIdentity = computeIdentity(sourceStr, fromSettingsDir);
       const dup = destPackages.find((e) => {

@@ -5,8 +5,8 @@
  */
 import fs from "node:fs";
 import path from "node:path";
-import os from "node:os";
 import { CONFIG_DIR } from "@blackbelt-technology/pi-dashboard-shared/config.js";
+import { getPiSessionsDir } from "@blackbelt-technology/pi-dashboard-shared/managed-paths.js";
 import { type SessionMeta, readSessionMeta, writeSessionMeta } from "@blackbelt-technology/pi-dashboard-shared/session-meta.js";
 import { readJsonFile, writeJsonFile } from "./json-store.js";
 import { PREFERENCES_FILE } from "./preferences-store.js";
@@ -75,7 +75,7 @@ export function runMigration(paths?: MigrationPaths): MigrationResult {
   const sessionsFile = paths?.sessionsFile ?? DEFAULT_SESSIONS_FILE;
   const stateFile = paths?.stateFile ?? DEFAULT_STATE_FILE;
   const preferencesFile = paths?.preferencesFile ?? PREFERENCES_FILE;
-  const sessionsScanDir = paths?.sessionsDir ?? path.join(os.homedir(), ".pi", "agent", "sessions");
+  const sessionsScanDir = paths?.sessionsDir ?? getPiSessionsDir();
 
   const result: MigrationResult = {
     sessionsWritten: 0,

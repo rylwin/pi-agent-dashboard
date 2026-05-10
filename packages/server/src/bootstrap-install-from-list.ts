@@ -12,7 +12,7 @@
 import os from "node:os";
 import path from "node:path";
 import { createRequire } from "node:module";
-import { getManagedDir } from "@blackbelt-technology/pi-dashboard-shared/managed-paths.js";
+import { getManagedDir, getPiAgentDir } from "@blackbelt-technology/pi-dashboard-shared/managed-paths.js";
 import {
   readInstallableList,
   type InstallablePackage,
@@ -80,7 +80,7 @@ async function defaultPiExtensionInstall(
     DefaultPackageManager: any;
     SettingsManager: any;
   }>("pi-coding-agent");
-  const agentDir = path.join(os.homedir(), ".pi", "agent");
+  const agentDir = getPiAgentDir();
   const settingsManager = piModule.SettingsManager.create(process.cwd(), agentDir);
   const pm = new piModule.DefaultPackageManager({
     cwd: process.cwd(),

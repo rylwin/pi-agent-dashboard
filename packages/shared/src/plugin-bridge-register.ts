@@ -13,6 +13,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import os from "node:os";
+import { getPiSettingsPath } from "./managed-paths.js";
 
 export interface PluginBridgeRegisterOptions {
   homedir?: string;
@@ -23,8 +24,9 @@ export type PluginBridgeConflict =
   | { type: "conflict"; existingPath: string; newPath: string };
 
 function getSettingsPath(homedir?: string): string {
+  if (!homedir) return getPiSettingsPath();
   const home = homedir ?? process.env.HOME ?? process.env.USERPROFILE ?? os.homedir();
-  return path.join(home, ".pi", "agent", "settings.json");
+  return getPiSettingsPath({ homedir: home });
 }
 
 function readSettings(settingsPath: string): Record<string, unknown> {

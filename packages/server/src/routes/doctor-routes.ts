@@ -24,6 +24,7 @@ import {
   type DoctorReport,
   type SharedChecksDeps,
 } from "@blackbelt-technology/pi-dashboard-shared/doctor-core.js";
+import { getPiSettingsPath } from "@blackbelt-technology/pi-dashboard-shared/managed-paths.js";
 
 function getManagedDir(): string {
   return process.env.MANAGED_DIR || path.join(os.homedir(), ".pi-dashboard");
@@ -47,7 +48,7 @@ function detectOnPath(name: string): { found: boolean; path?: string; source?: s
 
 function isApiKeyConfigured(): boolean {
   try {
-    const settings = path.join(os.homedir(), ".pi", "agent", "settings.json");
+    const settings = getPiSettingsPath();
     if (!existsSync(settings)) return false;
     const data = JSON.parse(readFileSync(settings, "utf-8"));
     if (data?.anthropicApiKey || data?.openaiApiKey || data?.apiKey) return true;

@@ -5,7 +5,7 @@
  */
 import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
-import os from "node:os";
+import { getPiSessionsDir } from "@blackbelt-technology/pi-dashboard-shared/managed-paths.js";
 import { condenseForFirstMessage } from "@blackbelt-technology/pi-dashboard-shared/skill-block-parser.js";
 
 export interface DiscoveredSession {
@@ -25,7 +25,7 @@ function encodeCwd(cwd: string): string {
 }
 
 function getSessionsDir(): string {
-  return join(os.homedir(), ".pi", "agent", "sessions");
+  return getPiSessionsDir();
 }
 
 /** Read the header and first user message from a JSONL session file */
