@@ -1,6 +1,6 @@
 import React, { useState, useCallback, useRef, useEffect, useMemo, type ReactNode } from "react";
 import { Icon } from "@mdi/react";
-import { mdiFlash, mdiClipboardText, mdiWrench, mdiFolder, mdiFile, mdiPlay, mdiStop, mdiAlert, mdiConsole, mdiClose } from "@mdi/js";
+import { mdiFlash, mdiClipboardText, mdiWrench, mdiFolder, mdiFile, mdiPlay, mdiStop, mdiAlert, mdiConsole, mdiImagePlus } from "@mdi/js";
 import type { CommandInfo, ImageContent, FileEntry } from "@blackbelt-technology/pi-dashboard-shared/types.js";
 import { useImagePaste } from "../hooks/useImagePaste.js";
 import { ImagePreviewStrip } from "./ImagePreviewStrip.js";
@@ -150,12 +150,13 @@ export function CommandInput({ commands: externalCommands, onSend, onListFiles, 
   }, [sessionId]);
   // Controlled when caller passes `images` (App lifts state per-session);
   // uncontrolled otherwise (legacy / tests).
-  const { pendingImages, imageError, handlePaste, removeImage, clearImages } = useImagePaste(
+  const { pendingImages, imageError, handlePaste, addImageFiles, removeImage, clearImages } = useImagePaste(
     images !== undefined ? { images, onImagesChange } : undefined,
   );
   const [dismissed, setDismissed] = useState<string | null>(null); // text value when Escape was pressed
   const prevDropdownKeyRef = useRef<string>(""); // tracks mode+filter to reset selectedIndex
   const inputRef = useRef<HTMLTextAreaElement>(null);
+  const imageInputRef = useRef<HTMLInputElement>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastFileQueryRef = useRef<string | null>(null);
 
@@ -268,6 +269,11 @@ export function CommandInput({ commands: externalCommands, onSend, onListFiles, 
       }
     }
   }, [text, pendingImages, onSend, clearImages]);
+
+  const handleImageSelect = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files) addImageFiles(e.target.files);
+    e.target.value = "";
+  }, [addImageFiles]);
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent) => {
@@ -454,6 +460,24 @@ export function CommandInput({ commands: externalCommands, onSend, onListFiles, 
       <ImagePreviewStrip images={pendingImages} error={imageError} onRemove={removeImage} />
 
       <div className="flex gap-2">
+        <input
+          ref={imageInputRef}
+          type="file"
+          accept="image/*"
+          multiple
+          className="hidden"
+          data-testid="image-file-input"
+          onChange={handleImageSelect}
+        />
+        <button
+          onClick={() => imageInputRef.current?.click()}
+          disabled={disabled || pendingPrompt}
+          className="p-2 bg-[var(--bg-tertiary)] rounded-lg hover:bg-[var(--bg-hover)] disabled:opacity-50 disabled:cursor-not-allowed self-end border border-[var(--border-secondary)]"
+          title="Attach image from camera or gallery"
+          data-testid="image-attach-button"
+        >
+          <Icon path={mdiImagePlus} size={0.7} />
+        </button>
         <textarea
           ref={inputRef}
           value={text}

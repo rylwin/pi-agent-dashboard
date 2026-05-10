@@ -98,6 +98,10 @@ function getTextarea(container: HTMLElement): HTMLTextAreaElement {
 	return container.querySelector("textarea")!;
 }
 
+function getImageFileInput(container: HTMLElement): HTMLInputElement {
+	return container.querySelector('input[type="file"]')!;
+}
+
 function getThumbnails(container: HTMLElement): HTMLImageElement[] {
 	return Array.from(container.querySelectorAll("img"))
 		.filter((img) => img.src.startsWith("data:image"));
@@ -126,6 +130,11 @@ async function flushFileReader() {
 	});
 }
 
+function selectImageFile(input: HTMLInputElement, mime = "image/jpeg", bytes = 100) {
+	const file = new File([new Uint8Array(bytes)], "camera-photo.jpg", { type: mime });
+	fireEvent.change(input, { target: { files: [file] } });
+}
+
 describe("chat-input pending-image integration", () => {
 	beforeEach(() => {
 		// Sanity: fresh state per test.
@@ -150,6 +159,35 @@ describe("chat-input pending-image integration", () => {
 		// Come back: CommandInput remounts and pulls images from App state.
 		fireEvent.click(getByTestId("toggle-chat"));
 		expect(getThumbnails(container)).toHaveLength(1);
+	});
+
+	it("selected image files create pending image thumbnails", async () => {
+		const { container } = render(<Harness />);
+		const input = getImageFileInput(container);
+
+		selectImageFile(input);
+		await flushFileReader();
+
+		expect(getThumbnails(container)).toHaveLength(1);
+	});
+
+	it("selected image files send with the original session prompt", async () => {
+		const onSend = vi.fn();
+		const { container } = render(<Harness onSendCapture={onSend} />);
+		const input = getImageFileInput(container);
+		const textarea = getTextarea(container);
+
+		selectImageFile(input);
+		await flushFileReader();
+		fireEvent.change(textarea, { target: { value: "what is this?" } });
+		fireEvent.keyDown(textarea, { key: "Enter" });
+
+		expect(onSend).toHaveBeenCalledTimes(1);
+		const [sid, text, images] = onSend.mock.calls[0];
+		expect(sid).toBe("A");
+		expect(text).toBe("what is this?");
+		expect(images).toHaveLength(1);
+		expect((images as ImageContent[])[0].mimeType).toBe("image/jpeg");
 	});
 
 	it("pasted images do NOT leak across session switches", async () => {
