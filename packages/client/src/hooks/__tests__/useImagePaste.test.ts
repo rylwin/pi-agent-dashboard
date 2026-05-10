@@ -69,11 +69,12 @@ describe("useImagePaste — uncontrolled mode (legacy)", () => {
 	it("appends selected image files to pendingImages", async () => {
 		const { result } = renderHook(() => useImagePaste());
 
-		act(() => { result.current.addImageFiles([makeFile("image/jpeg")]); });
+		act(() => { result.current.addImageFiles([makeFile("image/jpeg"), makeFile("image/webp")]); });
 		await act(async () => { await flushFileReader(); });
 
-		expect(result.current.pendingImages).toHaveLength(1);
+		expect(result.current.pendingImages).toHaveLength(2);
 		expect(result.current.pendingImages[0].mimeType).toBe("image/jpeg");
+		expect(result.current.pendingImages[1].mimeType).toBe("image/webp");
 	});
 
 	it("removeImage removes by index", async () => {
@@ -134,7 +135,7 @@ describe("useImagePaste — controlled mode", () => {
 		expect(result.current.pendingImages).toEqual(images);
 	});
 
-	it("routes selected files through onImagesChange", async () => {
+	it("routes multiple selected files through one onImagesChange", async () => {
 		let images: ImageContent[] = [];
 		const onImagesChange = vi.fn((next: ImageContent[]) => { images = next; });
 
@@ -142,12 +143,13 @@ describe("useImagePaste — controlled mode", () => {
 			useImagePaste({ images, onImagesChange }),
 		);
 
-		act(() => { result.current.addImageFiles([makeFile("image/webp")]); });
+		act(() => { result.current.addImageFiles([makeFile("image/webp"), makeFile("image/png")]); });
 		await act(async () => { await flushFileReader(); });
 
 		expect(onImagesChange).toHaveBeenCalledTimes(1);
-		expect(onImagesChange.mock.calls[0][0]).toHaveLength(1);
+		expect(onImagesChange.mock.calls[0][0]).toHaveLength(2);
 		expect(onImagesChange.mock.calls[0][0][0].mimeType).toBe("image/webp");
+		expect(onImagesChange.mock.calls[0][0][1].mimeType).toBe("image/png");
 	});
 
 	it("removeImage in controlled mode emits the new array via onImagesChange", () => {

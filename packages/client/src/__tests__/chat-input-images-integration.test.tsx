@@ -131,8 +131,14 @@ async function flushFileReader() {
 }
 
 function selectImageFile(input: HTMLInputElement, mime = "image/jpeg", bytes = 100) {
-	const file = new File([new Uint8Array(bytes)], "camera-photo.jpg", { type: mime });
-	fireEvent.change(input, { target: { files: [file] } });
+	selectImageFiles(input, [mime], bytes);
+}
+
+function selectImageFiles(input: HTMLInputElement, mimes: string[], bytes = 100) {
+	const files = mimes.map((mime, index) =>
+		new File([new Uint8Array(bytes)], `camera-photo-${index}.jpg`, { type: mime }),
+	);
+	fireEvent.change(input, { target: { files } });
 }
 
 describe("chat-input pending-image integration", () => {
@@ -165,10 +171,10 @@ describe("chat-input pending-image integration", () => {
 		const { container } = render(<Harness />);
 		const input = getImageFileInput(container);
 
-		selectImageFile(input);
+		selectImageFiles(input, ["image/jpeg", "image/png"]);
 		await flushFileReader();
 
-		expect(getThumbnails(container)).toHaveLength(1);
+		expect(getThumbnails(container)).toHaveLength(2);
 	});
 
 	it("selected image files send with the original session prompt", async () => {
@@ -177,7 +183,7 @@ describe("chat-input pending-image integration", () => {
 		const input = getImageFileInput(container);
 		const textarea = getTextarea(container);
 
-		selectImageFile(input);
+		selectImageFiles(input, ["image/jpeg", "image/png"]);
 		await flushFileReader();
 		fireEvent.change(textarea, { target: { value: "what is this?" } });
 		fireEvent.keyDown(textarea, { key: "Enter" });
@@ -186,8 +192,9 @@ describe("chat-input pending-image integration", () => {
 		const [sid, text, images] = onSend.mock.calls[0];
 		expect(sid).toBe("A");
 		expect(text).toBe("what is this?");
-		expect(images).toHaveLength(1);
+		expect(images).toHaveLength(2);
 		expect((images as ImageContent[])[0].mimeType).toBe("image/jpeg");
+		expect((images as ImageContent[])[1].mimeType).toBe("image/png");
 	});
 
 	it("pasted images do NOT leak across session switches", async () => {

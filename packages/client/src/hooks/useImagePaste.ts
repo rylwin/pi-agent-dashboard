@@ -93,48 +93,63 @@ export function useImagePaste(opts?: UseImagePasteOptions): UseImagePasteResult 
 		[isControlled, opts],
 	);
 
-	const addImageFile = useCallback((file: File) => {
+	const showImageError = useCallback((message: string) => {
+		setImageError(message);
+		setTimeout(() => setImageError(null), 3000);
+	}, []);
+
+	const readImageFile = useCallback((file: File): Promise<ImageContent | null> => {
 		const mimeType = file.type;
 
 		if (!SUPPORTED_IMAGE_TYPES.has(mimeType)) {
-			setImageError(`Unsupported image type: ${mimeType}. Use JPEG, PNG, GIF, or WebP.`);
-			setTimeout(() => setImageError(null), 3000);
-			return;
+			showImageError(`Unsupported image type: ${mimeType}. Use JPEG, PNG, GIF, or WebP.`);
+			return Promise.resolve(null);
 		}
 
-		const reader = new FileReader();
-		reader.onload = () => {
-			const dataUrl = reader.result as string;
-			const base64 = dataUrl.split(",")[1];
-			if (!base64) return;
+		return new Promise((resolve) => {
+			const reader = new FileReader();
+			reader.onload = () => {
+				const dataUrl = reader.result as string;
+				const base64 = dataUrl.split(",")[1];
+				if (!base64) {
+					resolve(null);
+					return;
+				}
 
-			if (base64.length > MAX_IMAGE_SIZE) {
-				setImageError("Image too large (max 10MB)");
-				setTimeout(() => setImageError(null), 3000);
-				return;
-			}
+				if (base64.length > MAX_IMAGE_SIZE) {
+					showImageError("Image too large (max 10MB)");
+					resolve(null);
+					return;
+				}
 
-			writeImages((prev) => [...prev, { type: "image", data: base64, mimeType }]);
-		};
-		reader.readAsDataURL(file);
-	}, [writeImages]);
+				resolve({ type: "image", data: base64, mimeType });
+			};
+			reader.onerror = () => resolve(null);
+			reader.readAsDataURL(file);
+		});
+	}, [showImageError]);
 
 	const addImageFiles = useCallback((files: FileList | File[]) => {
-		for (const file of Array.from(files)) {
-			addImageFile(file);
-		}
-	}, [addImageFile]);
+		void Promise.all(Array.from(files).map(readImageFile)).then((images) => {
+			const validImages = images.filter((image): image is ImageContent => image !== null);
+			if (validImages.length > 0) {
+				writeImages((prev) => [...prev, ...validImages]);
+			}
+		});
+	}, [readImageFile, writeImages]);
 
 	const handlePaste = useCallback((e: React.ClipboardEvent) => {
+		const files: File[] = [];
 		const items = e.clipboardData.items;
 		for (const item of items) {
 			if (!item.type.startsWith("image/")) continue;
 
 			e.preventDefault();
 			const file = item.getAsFile();
-			if (file) addImageFile(file);
+			if (file) files.push(file);
 		}
-	}, [addImageFile]);
+		if (files.length > 0) addImageFiles(files);
+	}, [addImageFiles]);
 
 	const removeImage = useCallback((index: number) => {
 		writeImages((prev) => prev.filter((_, i) => i !== index));
